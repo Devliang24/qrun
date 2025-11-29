@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='ai-test',
+    name='qrun',
     version='0.1.0',
-    description='AI-driven Android business testing framework',
-    author='AI Test Team',
+    description='AI-driven Android testing framework - Quick Run',
+    author='QRun Team',
     packages=find_packages(),
     python_requires='>=3.10',
     install_requires=[
@@ -17,10 +17,11 @@ setup(
         'Pillow>=10.0.0',
         'colorama>=0.4.6',
         'requests>=2.31.0',
+        'uiautomator2>=3.0.0',
     ],
     entry_points={
         'console_scripts': [
-            'ai-test=src.cli:cli',
+            'qrun=src.cli:cli',
         ],
     },
 )

@@ -14,9 +14,9 @@ init()
 
 
 @click.group()
-@click.version_option(version='0.1.0', prog_name='ai-test')
+@click.version_option(version='0.1.0', prog_name='qrun')
 def cli():
-    """AI 驱动的 Android 业务测试框架"""
+    """QRun - AI 驱动的 Android 测试框架"""
     pass
 
 
@@ -179,14 +179,14 @@ def check_env():
 @click.argument('description')
 @click.option('-y', '--yes', is_flag=True, help='免交互，直接保存并执行')
 @click.option('-n', '--name', default=None, help='指定脚本名称')
-@click.option('--no-run', is_flag=True, help='只保存，不执行')
-def generate_test(description, yes, name, no_run):
+@click.option('-s', '--save-only', is_flag=True, help='只保存，不执行')
+def generate_test(description, yes, name, save_only):
     """一句话生成并执行测试脚本
     
     示例:
-        ai-test generate "测试通知功能：点击通知，查看设置，返回"
-        ai-test generate "测试存储" -y
-        ai-test generate "测试显示" -n test_display --no-run
+        qrun g "测试通知功能：点击通知，查看设置，返回" -y
+        qrun generate "测试存储" -y
+        qrun g "测试显示" -n test_display -s
     """
     from src.llm.script_generator import ScriptGenerator
     from src.core.test_manager import TestManager
@@ -213,7 +213,7 @@ def generate_test(description, yes, name, no_run):
             path = generator.save(script_name, script)
             click.echo(f"\n{Fore.GREEN}[已保存]{Style.RESET_ALL} {path}")
             
-            if not no_run:
+            if not save_only:
                 click.echo(f"\n{Fore.CYAN}[执行中]{Style.RESET_ALL} ...")
                 result = manager.run_test(path)
                 
@@ -249,7 +249,7 @@ def generate_test(description, yes, name, no_run):
                     click.echo(f"{Fore.RED}[失败]{Style.RESET_ALL} {result['message']}")
                 click.echo(f"[报告] {result.get('report', 'N/A')}")
             else:
-                click.echo(f"\n可用 'ai-test run {path}' 执行")
+                click.echo(f"\n可用 'qrun r {path}' 执行")
                 
     except Exception as e:
         click.echo(f"{Fore.RED}[FAIL]{Style.RESET_ALL} 生成失败: {e}")
@@ -463,6 +463,14 @@ def clean_results(older_than):
                 removed += 1
     
     click.echo(f"已清理 {removed} 个文件")
+
+
+# ============== 命令别名 ==============
+cli.add_command(generate_test, name='g')
+cli.add_command(list_tests, name='ls')
+cli.add_command(show_script, name='s')
+cli.add_command(show_history, name='h')
+cli.add_command(run_test, name='r')
 
 
 if __name__ == '__main__':
