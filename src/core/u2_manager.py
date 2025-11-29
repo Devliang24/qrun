@@ -167,6 +167,34 @@ class U2Manager:
         """按回车键"""
         self.press_key('enter')
     
+    # AAOS 旋钮控制
+    def rotary_scroll(self, direction: str, steps: int = 1):
+        """旋钮滚动 (AAOS 车载)
+        
+        Args:
+            direction: clockwise(顺时针/向下) 或 counterclockwise(逆时针/向上)
+            steps: 滚动步数
+        """
+        if self._device:
+            key = 'dpad_down' if direction == 'clockwise' else 'dpad_up'
+            for _ in range(steps):
+                self._device.press(key)
+                time.sleep(0.2)
+    
+    def rotary_click(self):
+        """旋钮点击确认 (AAOS 车载)"""
+        self.press_enter()
+    
+    def rotary_nudge(self, direction: str):
+        """旋钮轻推 (AAOS 车载) - 左右方向
+        
+        Args:
+            direction: left 或 right
+        """
+        if self._device:
+            key = 'dpad_left' if direction == 'left' else 'dpad_right'
+            self._device.press(key)
+    
     def launch_app(self, package: str = None):
         """启动应用"""
         if not package:

@@ -75,6 +75,7 @@ class AITestLibrary:
     
     # 常用应用包名映射
     APP_PACKAGES = {
+        # 手机应用
         '设置': 'com.android.settings',
         '微信': 'com.tencent.mm',
         '支付宝': 'com.eg.android.AlipayGphone',
@@ -90,6 +91,14 @@ class AITestLibrary:
         '哔哩哔哩': 'tv.danmaku.bili',
         'bilibili': 'tv.danmaku.bili',
         'b站': 'tv.danmaku.bili',
+        # AAOS 车载应用
+        '车载设置': 'com.android.car.settings',
+        '车载媒体': 'com.android.car.media',
+        '车载地图': 'com.google.android.apps.maps',
+        '车载电话': 'com.android.car.dialer',
+        '车载收音机': 'com.android.car.radio',
+        '车载蓝牙': 'com.android.car.bluetooth',
+        '车载通知': 'com.android.car.notification',
     }
     
     @keyword('AI Open App')
@@ -225,6 +234,42 @@ class AITestLibrary:
             raise ValueError(f"未知方向: {direction}")
         
         time.sleep(0.5)
+    
+    @keyword('AI Rotary')
+    def ai_rotary(self, action: str, steps: int = 1):
+        """
+        旋钮控制 (AAOS 车载)
+        
+        Args:
+            action: 动作 (clockwise/顺时针, counterclockwise/逆时针, click/点击, left/左, right/右)
+            steps: 滚动步数（仅对顺/逆时针有效）
+        
+        Examples:
+            | AI Rotary | clockwise |        # 顺时针滚动1步
+            | AI Rotary | clockwise | 3 |    # 顺时针滚动3步
+            | AI Rotary | counterclockwise | # 逆时针滚动
+            | AI Rotary | click |            # 旋钮确认
+            | AI Rotary | left |             # 向左
+            | AI Rotary | right |            # 向右
+        """
+        self._ensure_connected()
+        u2 = _get_u2()
+        
+        action = action.lower()
+        if action in ['clockwise', '顺时针', 'down', '向下']:
+            u2.rotary_scroll('clockwise', int(steps))
+        elif action in ['counterclockwise', '逆时针', 'up', '向上']:
+            u2.rotary_scroll('counterclockwise', int(steps))
+        elif action in ['click', '点击', '确认']:
+            u2.rotary_click()
+        elif action in ['left', '左']:
+            u2.rotary_nudge('left')
+        elif action in ['right', '右']:
+            u2.rotary_nudge('right')
+        else:
+            raise ValueError(f"未知旋钮动作: {action}")
+        
+        time.sleep(0.3)
     
     @keyword('AI Scroll To')
     def ai_scroll_to(self, element_description: str, max_scrolls: int = 5):
