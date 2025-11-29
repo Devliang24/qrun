@@ -250,23 +250,146 @@ def take_screenshot(output):
 
 @cli.command('generate')
 @click.argument('description')
-@click.option('--output', '-o', help='输出文件路径')
-def generate_test(description, output):
-    """AI 生成测试用例"""
-    from src.llm.test_generator import TestGenerator
+@click.option('-y', '--yes', is_flag=True, help='免交互，直接保存并执行')
+@click.option('-n', '--name', default=None, help='指定脚本名称')
+@click.option('--no-run', is_flag=True, help='只保存，不执行')
+def generate_test(description, yes, name, no_run):
+    """一句话生成并执行测试脚本
     
-    generator = TestGenerator()
+    示例:
+        ai-test generate "测试通知功能：点击通知，查看设置，返回"
+        ai-test generate "测试存储" -y
+        ai-test generate "测试显示" -n test_display --no-run
+    """
+    from src.llm.script_generator import ScriptGenerator
+    from src.core.test_manager import TestManager
     
-    click.echo(f"正在生成测试用例...")
+    generator = ScriptGenerator()
+    manager = TestManager()
+    
+    click.echo(f"\n{Fore.CYAN}[生成中]{Style.RESET_ALL} 正在生成脚本...")
     
     try:
-        result = generator.generate(description, output)
-        click.echo(f"{Fore.GREEN}[OK]{Style.RESET_ALL} Generated: {result['file']}")
-        click.echo(f"  Lines: {result['lines']}")
-        click.echo(f"  AI Keywords: {result['keywords']}")
+        # 1. 生成脚本
+        script = generator.generate(description)
+        script_name = name or generator.extract_name(description)
+        
+        # 2. 显示脚本
+        click.echo(f"\n{Fore.GREEN}[生成脚本]{Style.RESET_ALL} {script_name}.robot")
+        click.echo("-" * 50)
+        click.echo(script)
+        click.echo("-" * 50)
+        
+        # 3. 交互或直接执行
+        if yes:
+            # 免交互模式：直接保存并执行
+            path = generator.save(script_name, script)
+            click.echo(f"\n{Fore.GREEN}[已保存]{Style.RESET_ALL} {path}")
+            
+            if not no_run:
+                click.echo(f"\n{Fore.CYAN}[执行中]{Style.RESET_ALL} ...")
+                result = manager.run_test(path)
+                
+                if result['success']:
+                    click.echo(f"{Fore.GREEN}[完成]{Style.RESET_ALL} {result['message']}")
+                else:
+                    click.echo(f"{Fore.RED}[失败]{Style.RESET_ALL} {result['message']}")
+                click.echo(f"[报告] {result.get('report', 'N/A')}")
+        else:
+            # 交互模式
+            click.echo(f"\n{Fore.YELLOW}[?] 操作选择:{Style.RESET_ALL}")
+            click.echo("    [y] 保存并执行")
+            click.echo("    [n] 仅保存，不执行")
+            click.echo("    [q] 取消")
+            
+            choice = click.prompt("选择", type=click.Choice(['y', 'n', 'q']), default='y')
+            
+            if choice == 'q':
+                click.echo("已取消")
+                return
+            
+            # 保存脚本
+            path = generator.save(script_name, script)
+            click.echo(f"\n{Fore.GREEN}[已保存]{Style.RESET_ALL} {path}")
+            
+            if choice == 'y':
+                click.echo(f"\n{Fore.CYAN}[执行中]{Style.RESET_ALL} ...")
+                result = manager.run_test(path)
+                
+                if result['success']:
+                    click.echo(f"{Fore.GREEN}[完成]{Style.RESET_ALL} {result['message']}")
+                else:
+                    click.echo(f"{Fore.RED}[失败]{Style.RESET_ALL} {result['message']}")
+                click.echo(f"[报告] {result.get('report', 'N/A')}")
+            else:
+                click.echo(f"\n可用 'ai-test run {path}' 执行")
+                
     except Exception as e:
-        click.echo(f"{Fore.RED}[FAIL]{Style.RESET_ALL} Generation failed: {e}")
+        click.echo(f"{Fore.RED}[FAIL]{Style.RESET_ALL} 生成失败: {e}")
         sys.exit(1)
+
+
+@cli.command('list')
+def list_tests():
+    """列出所有测试脚本"""
+    from src.core.test_manager import TestManager
+    
+    manager = TestManager()
+    tests = manager.list_tests()
+    
+    if not tests:
+        click.echo("暂无测试脚本")
+        return
+    
+    click.echo(f"\n{Fore.CYAN}测试脚本列表:{Style.RESET_ALL}")
+    click.echo("-" * 30)
+    for i, test in enumerate(tests, 1):
+        click.echo(f"  {i}. {test}")
+    click.echo("-" * 30)
+    click.echo(f"共 {len(tests)} 个脚本")
+
+
+@cli.command('show')
+@click.argument('script_name')
+def show_script(script_name):
+    """查看脚本内容"""
+    from src.core.test_manager import TestManager
+    
+    manager = TestManager()
+    content = manager.get_script_content(script_name)
+    
+    if content is None:
+        click.echo(f"{Fore.RED}[ERROR]{Style.RESET_ALL} 脚本不存在: {script_name}")
+        return
+    
+    click.echo(f"\n{Fore.CYAN}[{script_name}.robot]{Style.RESET_ALL}")
+    click.echo("-" * 50)
+    click.echo(content)
+    click.echo("-" * 50)
+
+
+@cli.command('history')
+@click.argument('script_name')
+def show_history(script_name):
+    """查看脚本执行历史"""
+    from src.core.test_manager import TestManager
+    
+    manager = TestManager()
+    history = manager.get_history(script_name)
+    
+    if not history:
+        click.echo(f"暂无执行历史: {script_name}")
+        return
+    
+    click.echo(f"\n{Fore.CYAN}执行历史 - {script_name}{Style.RESET_ALL}")
+    click.echo("-" * 60)
+    
+    for i, record in enumerate(reversed(history[-10:]), 1):  # 最近10条
+        status = f"{Fore.GREEN}PASS{Style.RESET_ALL}" if record['success'] else f"{Fore.RED}FAIL{Style.RESET_ALL}"
+        time = record['timestamp'][:19].replace('T', ' ')
+        click.echo(f"  {i}. [{status}] {time} - {record['passed']}passed/{record['failed']}failed")
+    
+    click.echo("-" * 60)
 
 
 @cli.command('suggest')
