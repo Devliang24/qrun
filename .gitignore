@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Test results
+results/
+*.png
+
+# Config with secrets
+.setting/
+config.yaml
+
+# Virtual env
+venv/
+.venv/
