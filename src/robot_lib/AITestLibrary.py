@@ -73,17 +73,61 @@ class AITestLibrary:
             else:
                 raise Exception("无法连接设备")
     
+    # 常用应用包名映射
+    APP_PACKAGES = {
+        '设置': 'com.android.settings',
+        '微信': 'com.tencent.mm',
+        '支付宝': 'com.eg.android.AlipayGphone',
+        '淘宝': 'com.taobao.taobao',
+        '抖音': 'com.ss.android.ugc.aweme',
+        '京东': 'com.jingdong.app.mall',
+        '美团': 'com.sankuai.meituan',
+        '饿了么': 'me.ele',
+        '百度': 'com.baidu.searchbox',
+        '高德地图': 'com.autonavi.minimap',
+        'QQ': 'com.tencent.mobileqq',
+        '网易云音乐': 'com.netease.cloudmusic',
+        '哔哩哔哩': 'tv.danmaku.bili',
+        'bilibili': 'tv.danmaku.bili',
+        'b站': 'tv.danmaku.bili',
+    }
+    
     @keyword('AI Open App')
-    def ai_open_app(self):
+    def ai_open_app(self, app_name: str = None):
         """
         打开应用
         
+        Args:
+            app_name: 应用名称或包名（可选，默认打开配置的应用）
+        
         Examples:
-            | AI Open App |
+            | AI Open App |                    # 打开默认应用
+            | AI Open App | 设置 |             # 打开设置
+            | AI Open App | 微信 |             # 打开微信
+            | AI Open App | com.tencent.mm |   # 用包名打开
         """
         self._ensure_connected()
         u2 = _get_u2()
-        u2.launch_app()
+        
+        package = None
+        if app_name:
+            # 先查映射表
+            if app_name in self.APP_PACKAGES:
+                package = self.APP_PACKAGES[app_name]
+            elif '.' in app_name:
+                # 看起来像包名
+                package = app_name
+            else:
+                # 尝试模糊匹配
+                for name, pkg in self.APP_PACKAGES.items():
+                    if app_name in name or name in app_name:
+                        package = pkg
+                        break
+        
+        if package:
+            u2.device.app_start(package)
+        else:
+            u2.launch_app()
         time.sleep(2)
     
     @keyword('AI Close App')

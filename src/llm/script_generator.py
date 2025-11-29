@@ -31,7 +31,8 @@ class ScriptGenerator:
 测试需求: {description}
 
 可用的关键字（必须使用这些）：
-- AI Open App: 打开应用
+- AI Open App: 打开默认应用
+- AI Open App    <应用名>: 打开指定应用（如：AI Open App    设置、AI Open App    微信）
 - AI Close App: 关闭应用
 - AI Click    <元素描述>: 点击元素
 - AI Input    <文本>    <输入框描述>: 输入文本
