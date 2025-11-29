@@ -131,15 +131,6 @@ def check_env():
     except FileNotFoundError:
         checks.append(('ADB', False, '未安装 (需要 Android SDK Platform Tools)'))
     
-    # 检查 Genymotion
-    from src.core.config_manager import get_config
-    config = get_config()
-    player_path = config.get('genymotion.player_path', '')
-    if Path(player_path).exists():
-        checks.append(('Genymotion', True, player_path))
-    else:
-        checks.append(('Genymotion', False, '未找到 (检查 genymotion.player_path 配置)'))
-    
     # 检查 Python 包
     try:
         import dashscope
@@ -180,70 +171,6 @@ def check_env():
     else:
         click.echo(f"{Fore.YELLOW}环境检查: {passed}/{total} 通过{Style.RESET_ALL}")
         click.echo(f"\n请安装缺失的组件后重新运行 'ai-test check-env'")
-
-
-# ============== 设备管理 ==============
-
-@cli.command('start')
-def start_device():
-    """启动 Genymotion 设备"""
-    from src.core.device_manager import DeviceManager
-    
-    manager = DeviceManager()
-    success = manager.start()
-    
-    if success:
-        click.echo(f"{Fore.GREEN}[OK]{Style.RESET_ALL} Device started")
-    else:
-        click.echo(f"{Fore.RED}[FAIL]{Style.RESET_ALL} Device start failed")
-        sys.exit(1)
-
-
-@cli.command('stop')
-def stop_device():
-    """停止 Genymotion 设备"""
-    from src.core.device_manager import DeviceManager
-    
-    manager = DeviceManager()
-    manager.stop()
-    click.echo(f"{Fore.GREEN}[OK]{Style.RESET_ALL} Device stopped")
-
-
-@cli.command('status')
-@click.option('--json', 'as_json', is_flag=True, help='输出 JSON 格式')
-def device_status(as_json):
-    """查看设备状态"""
-    from src.core.device_manager import DeviceManager
-    import json
-    
-    manager = DeviceManager()
-    status = manager.get_status()
-    
-    if as_json:
-        click.echo(json.dumps(status, indent=2))
-    else:
-        if status['running']:
-            click.echo(f"{Fore.GREEN}[Running]{Style.RESET_ALL} {status['device_name']}")
-            click.echo(f"  UDID: {status['udid']}")
-        else:
-            click.echo(f"{Fore.YELLOW}[Stopped]{Style.RESET_ALL} {status['device_name']}")
-
-
-@cli.command('screenshot')
-@click.argument('output', default='screenshot.png')
-def take_screenshot(output):
-    """截取屏幕截图"""
-    from src.core.appium_manager import get_appium
-    
-    appium = get_appium()
-    screenshot = appium.get_screenshot_bytes()
-    
-    if screenshot:
-        with open(output, 'wb') as f:
-            f.write(screenshot)
-        click.echo(f"{Fore.GREEN}[OK]{Style.RESET_ALL} Screenshot saved: {output}")
-    else:
-        click.echo(f"{Fore.RED}[FAIL]{Style.RESET_ALL} Screenshot failed")
 
 
 # ============== 测试生成 ==============

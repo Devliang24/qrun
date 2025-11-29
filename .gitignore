@@ -15,9 +15,8 @@ build/
 results/
 *.png
 
-# Config with secrets
+# Local settings
 .setting/
-config.yaml
 
 # Virtual env
 venv/
