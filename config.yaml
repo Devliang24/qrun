@@ -2,28 +2,19 @@ ai:
   locator:
     retry_count: 3
   wait_timeout: 30
+
 app:
-  activity: .Settings
-  app_path: ''
   package: com.android.settings
-appium:
-  capabilities:
-    automationName: UiAutomator2
-    newCommandTimeout: 300
-    noReset: true
-    platformName: Android
-  server_url: http://localhost:4723
-genymotion:
-  auto_start: true
-  device_name: Google Pixel 3 XL
-  device_serial: 127.0.0.1:16384
-  player_path: C:\Program Files\Genymobile\Genymotion\player.exe
-  startup_timeout: 120
+  activity: .Settings
+
+device:
+  serial: 127.0.0.1:7555
+
 qianwen:
   api_key: sk-8bcd728cd220425183c454573f5efb63
   model: qwen-vl-max
   timeout: 60
+
 robot:
   log_level: INFO
   output_dir: ./results
-  screenshot_on_failure: true
