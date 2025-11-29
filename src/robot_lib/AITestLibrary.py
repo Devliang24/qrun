@@ -90,6 +90,8 @@ class AITestLibrary:
         '哔哩哔哩': 'tv.danmaku.bili',
         'bilibili': 'tv.danmaku.bili',
         'b站': 'tv.danmaku.bili',
+        '西瓜视频': 'com.ss.android.article.video',
+        '今日头条': 'com.ss.android.article.news',
     }
     
     @keyword('AI Open App')
