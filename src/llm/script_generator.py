@@ -26,40 +26,69 @@ class ScriptGenerator:
         Returns:
             str: 生成的 Robot Framework 脚本内容
         """
-        prompt = f"""你是一个 Robot Framework 测试脚本专家。将以下测试需求转换为 Robot Framework 脚本。
+        prompt = f"""你是 Robot Framework 测试脚本专家。将测试需求转换为脚本。
 
 测试需求: {description}
 
-可用的关键字（必须使用这些）：
-- AI Open App: 打开默认应用
-- AI Open App    <应用名>: 打开指定应用（如：AI Open App    设置、AI Open App    微信）
+可用关键字：
+- AI Open App / AI Open App    <应用名>: 打开应用
 - AI Close App: 关闭应用
-- AI Click    <元素描述>: 点击元素
-- AI Input    <文本>    <输入框描述>: 输入文本
-- AI Assert    <验证条件>: 验证状态
+- AI Click    <元素>: 点击
+- AI Input    <文本>    <输入框>: 输入
+- AI Assert    <条件>: 验证
 - AI Swipe    <方向>: 滑动 (up/down/left/right)
-- AI Back: 返回
-- AI Home: 回到主页
+- AI Back / AI Home: 返回/主页
 - AI Sleep    <秒数>: 等待
 
-生成要求：
-1. 使用 *** Settings *** 和 *** Test Cases *** 格式
-2. Library 路径为: src/robot_lib/AITestLibrary.py
-3. 测试用例名称用中文
-4. 每个操作后适当添加 AI Sleep 等待
-5. 只返回脚本内容，不要其他说明
+高级语法（按需使用）：
 
-示例格式：
+1. FOR 循环（重复N次）:
+    FOR    ${{i}}    IN RANGE    次数
+        操作
+    END
+
+2. IF 条件:
+    IF    条件
+        操作
+    ELSE
+        其他操作
+    END
+
+3. WHILE 循环:
+    WHILE    条件    limit=最大次数
+        操作
+    END
+
+4. TRY-EXCEPT（处理可能失败的操作）:
+    TRY
+        可能失败的操作
+    EXCEPT
+        失败时的操作
+    END
+
+生成要求：
+1. Library 路径: src/robot_lib/AITestLibrary.py
+2. 测试用例名称用中文
+3. 重复操作必须用 FOR 循环
+4. 不确定的操作用 TRY-EXCEPT 包裹
+5. 只返回脚本，不要说明
+
+示例：
 *** Settings ***
 Library    src/robot_lib/AITestLibrary.py
 
 *** Test Cases ***
-测试XXX功能
-    AI Open App
+批量操作示例
+    AI Open App    某应用
     AI Sleep    2
-    AI Click    某按钮
-    AI Sleep    1
-    AI Back"""
+    FOR    ${{i}}    IN RANGE    5
+        AI Swipe    up
+        TRY
+            AI Click    按钮
+        EXCEPT
+            Log    未找到
+        END
+    END"""
 
         response = self.qianwen.generate(prompt)
         
