@@ -202,7 +202,7 @@ def generate_test(description, yes, name, save_only):
         script_name = name or generator.extract_name(description)
         
         # 2. 显示脚本
-        click.echo(f"\n{Fore.GREEN}[生成脚本]{Style.RESET_ALL} {script_name}.robot")
+        click.echo(f"\n{Fore.GREEN}[生成脚本]{Style.RESET_ALL} {script_name}.yaml")
         click.echo("-" * 50)
         click.echo(script)
         click.echo("-" * 50)
@@ -253,6 +253,8 @@ def generate_test(description, yes, name, save_only):
                 
     except Exception as e:
         click.echo(f"{Fore.RED}[FAIL]{Style.RESET_ALL} 生成失败: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 
@@ -286,10 +288,14 @@ def show_script(script_name):
     content = manager.get_script_content(script_name)
     
     if content is None:
+        # 尝试自动补全 .yaml
+        script_name_yaml = f"{script_name}.yaml"
+        # 这里的逻辑在 TestManager 里可能需要优化，暂时先这样
         click.echo(f"{Fore.RED}[ERROR]{Style.RESET_ALL} 脚本不存在: {script_name}")
         return
     
-    click.echo(f"\n{Fore.CYAN}[{script_name}.robot]{Style.RESET_ALL}")
+    ext = ".yaml" if "steps:" in content else ".robot"
+    click.echo(f"\n{Fore.CYAN}[{script_name}{ext}]{Style.RESET_ALL}")
     click.echo("-" * 50)
     click.echo(content)
     click.echo("-" * 50)

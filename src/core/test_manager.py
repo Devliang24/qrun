@@ -32,11 +32,23 @@ class TestManager:
         
         os.makedirs(output_dir, exist_ok=True)
         
+        # 检查是否为 YAML 脚本
+        robot_path = script_path
+        if script_path.endswith('.yaml') or script_path.endswith('.yml'):
+            from src.core.yaml_converter import YamlToRobotConverter
+            converter = YamlToRobotConverter()
+            
+            # 生成临时 robot 文件
+            temp_robot_path = script_path.rsplit('.', 1)[0] + '.robot'
+            converter.convert_file(script_path, temp_robot_path)
+            robot_path = temp_robot_path
+            print(f"[Info] Converted YAML to Robot: {robot_path}")
+        
         # 构建 robot 命令
         cmd = [
             'python', '-m', 'robot',
             '--outputdir', output_dir,
-            script_path
+            robot_path
         ]
         
         try:
@@ -139,13 +151,19 @@ class TestManager:
     
     def get_script_content(self, script_name: str) -> Optional[str]:
         """获取脚本内容"""
+        # 尝试 .yaml
+        script_path = os.path.join(self.tests_dir, f"{script_name}.yaml")
+        if os.path.exists(script_path):
+            with open(script_path, 'r', encoding='utf-8') as f:
+                return f.read()
+                
+        # 尝试 .robot
         script_path = os.path.join(self.tests_dir, f"{script_name}.robot")
+        if os.path.exists(script_path):
+            with open(script_path, 'r', encoding='utf-8') as f:
+                return f.read()
         
-        if not os.path.exists(script_path):
-            return None
-        
-        with open(script_path, 'r', encoding='utf-8') as f:
-            return f.read()
+        return None
     
     def list_tests(self) -> List[str]:
         """列出所有测试脚本"""
@@ -156,4 +174,6 @@ class TestManager:
         for f in os.listdir(self.tests_dir):
             if f.endswith('.robot'):
                 tests.append(f[:-6])
+            elif f.endswith('.yaml'):
+                tests.append(f[:-5])
         return tests

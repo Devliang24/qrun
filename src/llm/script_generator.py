@@ -18,116 +18,64 @@ class ScriptGenerator:
     
     def generate(self, description: str) -> str:
         """
-        将自然语言描述转换为 Robot Framework 脚本
+        将自然语言描述转换为 YAML 测试脚本
         
         Args:
-            description: 测试描述，如 "测试通知功能：点击通知，查看应用设置，返回"
+            description: 测试描述
             
         Returns:
-            str: 生成的 Robot Framework 脚本内容
+            str: 生成的 YAML 脚本内容
         """
-        prompt = f"""你是 Robot Framework 测试脚本专家。将测试需求转换为脚本。
+        prompt = f"""你是一个自动化测试专家。请将以下测试需求转换为 YAML 格式的测试脚本。
 
 测试需求: {description}
 
-可用关键字：
-- AI Open App / AI Open App    <应用名>: 打开应用
-- AI Close App: 关闭应用
-- AI Click    <元素>: 点击
-- AI Input    <文本>    <输入框>: 输入
-- AI Assert    <条件>: 验证
-- AI Swipe    <方向>: 滑动 (up/down/left/right)
-- AI Back / AI Home: 返回/主页
-- AI Sleep    <秒数>: 等待
+YAML 格式规范：
+```yaml
+name: 测试名称
+description: 简短描述
+steps:
+  - action: AI Open App
+    args: [应用名]
+  - action: AI Click
+    args: [元素描述]
+  - action: AI Input
+    args: [文本, 元素描述]
+  - action: AI Swipe
+    args: [up/down/left/right]
+  - action: AI Back / AI Home / AI Sleep
+    args: [参数(可选)]
+    
+  # 循环结构
+  - loop: 5
+    steps:
+      - action: ...
+      
+  # 错误处理
+  - try:
+      steps: [...]
+    except:
+      steps: [...]
+```
 
-高级语法（按需使用）：
-
-1. FOR 循环（重复N次）:
-    FOR    ${{i}}    IN RANGE    次数
-        操作
-    END
-
-2. IF 条件:
-    IF    条件
-        操作
-    ELSE
-        其他操作
-    END
-
-3. WHILE 循环:
-    WHILE    条件    limit=最大次数
-        操作
-    END
-
-4. TRY-EXCEPT（处理可能失败的操作）:
-    TRY
-        可能失败的操作
-    EXCEPT
-        失败时的操作
-    END
-
-生成要求：
-1. Library 路径: src/robot_lib/AITestLibrary.py
-2. 测试用例名称用中文
-3. 重复操作必须用 FOR 循环
-4. 不确定的操作用 TRY-EXCEPT 包裹
-5. 只返回脚本，不要说明
-
-示例：
-*** Settings ***
-Library    src/robot_lib/AITestLibrary.py
-
-*** Test Cases ***
-批量操作示例
-    AI Open App    某应用
-    AI Sleep    2
-    FOR    ${{i}}    IN RANGE    5
-        AI Swipe    up
-        TRY
-            AI Click    按钮
-        EXCEPT
-            Log    未找到
-        END
-    END"""
+要求：
+1. 只返回 YAML 内容，不要包含 ```yaml 标记
+2. 确保缩进正确 (2空格)
+3. 步骤逻辑合理
+"""
 
         response = self.qianwen.generate(prompt)
         
-        # 清理响应，提取脚本内容
+        # 清理响应
         script = self._clean_script(response)
         return script
     
     def _clean_script(self, response: str) -> str:
-        """清理 LLM 响应，提取纯脚本内容"""
+        """清理 LLM 响应，提取纯 YAML 内容"""
         # 移除 markdown 代码块标记
-        script = re.sub(r'```(?:robot|robotframework)?\n?', '', response)
+        script = re.sub(r'```(?:yaml)?\n?', '', response)
         script = re.sub(r'```\n?', '', script)
-        
-        # 确保以 *** Settings *** 开头
-        if '*** Settings ***' in script:
-            start = script.find('*** Settings ***')
-            script = script[start:]
-        
         return script.strip()
-    
-    def extract_name(self, description: str) -> str:
-        """从描述中提取测试名称"""
-        # 尝试提取冒号前的部分作为名称
-        if '：' in description:
-            name = description.split('：')[0]
-        elif ':' in description:
-            name = description.split(':')[0]
-        else:
-            # 取前20个字符
-            name = description[:20]
-        
-        # 清理名称
-        name = re.sub(r'[\\/:*?"<>|]', '', name)
-        name = name.strip()
-        
-        if not name:
-            name = f"test_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        
-        return name
     
     def save(self, name: str, content: str) -> str:
         """
@@ -144,7 +92,7 @@ Library    src/robot_lib/AITestLibrary.py
         os.makedirs(self.tests_dir, exist_ok=True)
         
         # 生成文件名
-        filename = f"{name}.robot"
+        filename = f"{name}.yaml"
         filepath = os.path.join(self.tests_dir, filename)
         
         # 保存文件
