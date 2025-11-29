@@ -1,14 +1,14 @@
-# AI 驱动的 Android 业务测试框架
+# QRun - AI 驱动的 Android 业务测试框架
 
-基于 **Robot Framework + 千问 VL + Appium** 的智能化 Android 应用自动化测试工具，融合 Midscene 的纯视觉理解思想。
+基于 **Robot Framework + 千问 VL + uiautomator2** 的智能化 Android 应用自动化测试工具，融合 **Midscene** 的视觉定位思想 (Set-of-Mark)。
 
 ## 核心特性
 
-- **纯视觉理解** - 基于截图定位元素，不依赖 UI 树
-- **自然语言 API** - 用人话描述操作，无需 xpath
-- **AI Query** - 智能提取界面数据
-- **AI Assert** - 智能验证界面状态
-- **AI Do** - 自动规划风格，一句话完成多步骤
+- **视觉定位 (Visual Grounding)** - 结合截图标记和多模态大模型，精准定位无障碍信息缺失的元素
+- **自然语言交互** - 用自然语言描述操作 ("点击右侧的评论按钮")，无需编写复杂选择器
+- **一句话自动化** - `qrun generate` 自动生成并执行测试脚本
+- **智能数据提取** - `AI Query` 从界面截图中提取结构化数据
+- **无需 Appium** - 直接使用 uiautomator2 + ADB，更轻量更稳定
 
 ## 快速开始
 
@@ -23,45 +23,29 @@ pip install -e .
 
 ```bash
 # 设置千问 API Key（从阿里云 DashScope 获取）
-ai-test config set qianwen.api_key "sk-your-key"
+qrun config set qianwen.api_key "sk-your-key"
 
-# 设置应用信息
-ai-test config set app.package "com.example.app"
-ai-test config set app.activity ".MainActivity"
+# 设置设备（可选，默认连接本地第一台设备）
+qrun config set device.serial "127.0.0.1:7555"
 ```
 
 ### 3. 检查环境
 
 ```bash
-ai-test check-env
+qrun check-env
 ```
 
-### 4. 启动设备
+### 4. 生成并执行测试
 
 ```bash
-# 终端 1: 启动 Appium
-appium
-
-# 终端 2: 启动 Genymotion 设备
-ai-test start
+# 一句话生成脚本并直接运行 (-y)
+qrun generate "打开西瓜视频，向上滑动5个视频，对每个视频评论真好看" -y
 ```
 
-### 5. 生成测试
+### 5. 查看报告
 
 ```bash
-ai-test generate "测试登录：输入用户名密码，点击登录，验证首页"
-```
-
-### 6. 运行测试
-
-```bash
-ai-test run tests/测试登录.robot
-```
-
-### 7. 查看报告
-
-```bash
-ai-test report
+qrun report
 ```
 
 ## AI Keywords
@@ -75,10 +59,11 @@ AI Do    打开应用，输入用户名 test，点击登录
 ### 精确控制风格
 
 ```robot
-AI Click    登录按钮
-AI Input    testuser    用户名输入框
+AI Click    右侧的评论按钮
+AI Input    真好看    评论输入框
 AI Assert   首页已显示
 AI Wait For    加载完成
+AI Swipe    up
 ```
 
 ### 数据提取
@@ -90,20 +75,20 @@ ${items}=    AI Query    返回商品列表，包含名称和价格
 ## 项目结构
 
 ```
-ai_and/
+qrun/
 ├── src/
-│   ├── cli.py                  # CLI 入口
+│   ├── cli.py                  # CLI 入口 (qrun)
 │   ├── llm/                    # LLM 核心模块
-│   │   ├── qianwen_client.py   # 千问客户端
-│   │   ├── visual_locator.py   # 纯视觉定位
+│   │   ├── qianwen_client.py   # 千问多模态客户端
+│   │   ├── visual_locator.py   # Set-of-Mark 视觉定位器
 │   │   ├── action_planner.py   # AI Do 规划
-│   │   └── test_generator.py   # 测试生成
+│   │   └── script_generator.py # 脚本生成器
 │   ├── robot_lib/
 │   │   └── AITestLibrary.py    # Robot Keywords
 │   └── core/
 │       ├── config_manager.py   # 配置管理
-│       ├── device_manager.py   # Genymotion
-│       └── appium_manager.py   # Appium
+│       ├── u2_manager.py       # uiautomator2 设备管理
+│       └── test_manager.py     # 测试执行管理
 ├── tests/                      # 测试用例
 ├── results/                    # 测试结果
 ├── config.yaml                 # 配置文件
@@ -114,52 +99,35 @@ ai_and/
 
 ```bash
 # 配置
-ai-test config set <key> <value>
-ai-test config show
+qrun config set <key> <value>
+qrun config show
 
-# 环境
-ai-test check-env
-ai-test start
-ai-test stop
-ai-test status
+# 测试生成与执行
+qrun generate "<描述>" [-y] [-n name]
+qrun run <test.robot>
+qrun list
+qrun show <script_name>
+qrun history <script_name>
 
-# 测试
-ai-test generate "<描述>"
-ai-test run <test.robot>
-ai-test report
-
-# 分析
-ai-test analyze <output.xml>
-ai-test suggest --feature <功能>
+# 报告与分析
+qrun report
+qrun analyze <output.xml>
 ```
 
 ## 前置环境
 
-- Java JDK 8+
-- Node.js 16+
-- Appium (`npm install -g appium && appium driver install uiautomator2`)
-- Android SDK Platform Tools（ADB）
-- Genymotion + 虚拟设备
 - Python 3.10+
+- Android 设备或模拟器 (开启 USB 调试)
+- Android SDK Platform Tools (ADB)
+- 千问 VL 模型 API Key (DashScope)
 
-## 配置文件
+## 常见问题
 
-```yaml
-qianwen:
-  api_key: ""
-  model: "qwen-vl-max"
+**Q: 为什么点击位置不准确？**
+A: 框架使用 Set-of-Mark 方案，会在截图上绘制编号。如果 XML 结构缺失或元素重叠，可能会影响 AI 判断。尝试优化描述，例如增加方位词："点击右下角的更多"。
 
-genymotion:
-  device_name: "Google Pixel 3 XL"
-  auto_start: true
-
-appium:
-  server_url: "http://localhost:4723"
-
-app:
-  package: ""
-  activity: ""
-```
+**Q: 中文输入失败？**
+A: 框架会自动尝试使用 ADB Keyboard 或剪贴板粘贴。请确保设备支持 `adb shell input` 或已安装相应的输入法服务 (ATX Agent 会自动处理)。
 
 ## License
 
