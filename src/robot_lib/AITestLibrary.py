@@ -22,8 +22,8 @@ def _get_locator():
     """获取定位器实例"""
     global _locator
     if _locator is None:
-        from src.llm.hierarchy_locator import HierarchyLocator
-        _locator = HierarchyLocator()
+        from src.llm.visual_locator import VisualLocator
+        _locator = VisualLocator()
     return _locator
 
 

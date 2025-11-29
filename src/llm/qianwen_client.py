@@ -38,15 +38,30 @@ class QianwenClient:
             return image_data
         return ""
     
-    def generate(self, prompt: str) -> str:
-        """纯文本生成"""
+    def generate(self, prompt: str, image_path: str = None) -> str:
+        """调用通义千问 VL 模型
+        
+        Args:
+            prompt: 提示词
+            image_path: 图片路径（本地文件路径，str）
+        """
         if not MultiModalConversation:
             raise ImportError("dashscope 未安装，请运行: pip install dashscope")
+        
+        content = []
+        if image_path:
+            # DashScope Python SDK 支持直接传 file:// 路径
+            # 或者我们可以手动转 base64
+            # 官方文档建议直接传路径：file://path/to/image.png
+            abs_path = Path(image_path).absolute()
+            content.append({'image': f'file://{str(abs_path)}'})
+            
+        content.append({'text': prompt})
         
         messages = [
             {
                 'role': 'user',
-                'content': [{'text': prompt}]
+                'content': content
             }
         ]
         
